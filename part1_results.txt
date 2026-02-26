@@ -1,0 +1,108 @@
+Part 1 Results
+
+Q1: What Python dependencies does this project use?
+
+Answer:
+
+Core services (most relevant):
+- auth_server/pyproject.toml (project.name=auth_server)
+  - fastapi>=0.115.0
+  - uvicorn[standard]>=0.34.0
+  - pydantic>=2.0.0
+  - pydantic-settings>=2.0.0
+  - requests>=2.28.0
+  - python-jose>=3.3.0
+  - python-dotenv>=1.0.0
+  - boto3>=1.28.0
+  - pyjwt>=2.6.0
+  - cryptography>=40.0.0
+  - pyyaml>=6.0.0
+  - httpx>=0.25.0
+  - itsdangerous>=2.1.0
+  - opensearch-py>=2.4.0
+  - aiohttp>=3.8.0
+  - motor>=3.3.0
+  - pymongo>=4.6.0
+  - aiofiles>=24.1.0
+  - optional-dependencies groups: dev
+
+- metrics-service/pyproject.toml (project.name=mcp-metrics-service)
+  - fastapi>=0.104.0
+  - uvicorn[standard]>=0.24.0
+  - pydantic>=2.5.0
+  - aiosqlite>=0.19.0
+  - httpx>=0.25.0
+  - opentelemetry-api>=1.20.0
+  - opentelemetry-sdk>=1.20.0
+  - opentelemetry-exporter-prometheus>=0.45b0
+  - opentelemetry-exporter-otlp>=1.20.0
+  - python-multipart>=0.0.6
+  - optional-dependencies groups: dev, test
+
+- pyproject.toml (project.name=mcp-registry)
+  - aiofiles>=24.1.0
+  - fastapi>=0.115.12
+  - itsdangerous>=2.2.0
+  - jinja2>=3.1.6
+  - mcp>=1.9.3
+  - pydantic>=2.11.3
+  - pydantic-settings>=2.0.0
+  - httpx>=0.27.0
+  - python-dotenv>=1.1.0
+  - python-multipart>=0.0.20
+  - uvicorn[standard]>=0.34.2
+  - faiss-cpu>=1.7.4
+  - sentence-transformers>=3.0.0
+  - websockets>=15.0.1
+  - scikit-learn>=1.3.0
+  - torch>=1.6.0
+  - huggingface-hub>=0.31.1
+  - bandit>=1.8.3
+  - langchain-mcp-adapters>=0.0.11
+  - langgraph>=0.4.3
+  - langchain-aws>=0.2.23
+  - pytz>=2025.2
+  - strands-agents>=0.1.6
+  - strands-agents-tools>=0.1.4
+  - pyjwt>=2.10.1
+  - typing-extensions>=4.8.0
+  - httpcore[asyncio]>=1.0.9
+  - pyyaml>=6.0.0
+  - langchain-anthropic>=0.3.17
+  - matplotlib>=3.10.5
+  - psutil>=6.1.0
+  - email-validator>=2.2.0
+  - aiohttp>=3.8.0
+  - rich>=13.0.0
+  - requests>=2.31.0
+  - cisco-ai-a2a-scanner @ git+https://github.com/cisco-ai-defense/a2a-scanner.git@main
+  - cisco-ai-skill-scanner>=1.0.0
+  - awscli>=1.36.0
+  - boto3>=1.35.0
+  - motor>=3.3.0
+  - pymongo>=4.6.0
+  - dnspython>=2.4.0
+  - litellm>=1.50.0
+  - cryptography>=46.0.3
+  - prometheus-client>=0.20.0
+  - optional-dependencies groups: dev, docs
+
+All discovered Python subprojects (pyproject.toml):
+- agents/a2a/pyproject.toml (project.name=a2a)
+- auth_server/pyproject.toml (project.name=auth_server)
+- metrics-service/pyproject.toml (project.name=mcp-metrics-service)
+- pyproject.toml (project.name=mcp-registry)
+- servers/currenttime/pyproject.toml (project.name=current-time-mcp)
+- servers/example-server/pyproject.toml (project.name=example-mcp-server)
+- servers/fininfo/pyproject.toml (project.name=fininfo-mcp-server)
+- servers/mcpgw/pyproject.toml (project.name=mcpgw-mcp-server)
+- servers/realserverfaketools/pyproject.toml (project.name=real-server-fake-tools-mcp)
+
+Summary:
+This repository contains multiple Python services. The core services use FastAPI for API serving, plus libraries for authentication (JWT/Cognito-related), database access (MongoDB drivers), and HTTP clients.
+Notable dependencies in core services include: fastapi, uvicorn, pydantic, httpx, aiohttp, pymongo, motor, pyjwt, python-jose, cryptography, sentence-transformers, faiss-cpu, prometheus-client, opentelemetry-api, opentelemetry-sdk.
+
+Files referenced:
+- auth_server/pyproject.toml
+- metrics-service/pyproject.toml
+- pyproject.toml
