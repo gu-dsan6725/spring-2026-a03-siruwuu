@@ -106,3 +106,112 @@ Files referenced:
 - auth_server/pyproject.toml
 - metrics-service/pyproject.toml
 - pyproject.toml
+
+Q2: What is the main entry point file for the registry service?
+
+Answer:
+The registry service entry point is most likely: registry/main.py
+
+Evidence (snippet):
+```
+ 346 |     # Shutdown tasks
+ 347 |     logger.info("🔄 Shutting down MCP Gateway Registry...")
+ 348 |     try:
+ 349 |         # Stop peer sync scheduler
+ 350 |         peer_sync_scheduler = get_peer_sync_scheduler()
+ 351 |         await peer_sync_scheduler.stop()
+ 352 | 
+ 353 |         # Shutdown audit logger if enabled
+ 354 |         if audit_logger is not None:
+ 355 |             logger.info("📝 Closing audit logger...")
+ 356 |             await audit_logger.close()
+ 357 |         
+ 358 |         # Shutdown services gracefully
+ 359 |         await health_service.shutdown()
+ 360 |         logger.info("✅ Shutdown completed successfully!")
+ 361 |     except Exception as e:
+ 362 |         logger.error(f"❌ Error during shutdown: {e}", exc_info=True)
+ 363 | 
+ 364 | 
+ 365 | # Create FastAPI application
+ 366 | app = FastAPI(
+ 367 |     title="MCP Gateway Registry",
+ 368 |     description="A registry and management system for Model Context Protocol (MCP) servers",
+ 369 |     version=__version__,
+ 370 |     lifespan=lifespan,
+ 371 |     root_path=os.environ.get("ROOT_PATH", ""),  # Support path-based routing with ALB
+ 372 |     swagger_ui_parameters={
+ 373 |         "persistAuthorization": True,
+ 374 |     },
+ 375 |     openapi_tags=[
+ 376 |         {
+ 377 |             "name": "Authentication",
+ 378 |             "description": "OAuth2 and session-based authentication endpoints"
+ 379 |         },
+ 380 |         {
+ 381 |             "name": "Server Management",
+ 382 |             "description": "MCP server registration and management. Requires JWT Bearer token authentication."
+ 383 |         },
+ 384 |         {
+ 385 |             "name": "Agent Management",
+ 386 |             "description": "A2A agent registration and management. Requires JWT Bearer token authentication."
+```
+
+Why this file:
+It contains the FastAPI application definition and related routing/setup code, which typically indicates the service entry point.
+
+Files referenced:
+- registry/main.py
+
+Q3: What programming languages and file types are used in this repository? (e.g., Python, TypeScript, YAML, JSON, Dockerfile, etc.)
+
+Repo scanned: /home/ubuntu/spring-2026-a03-siruwuu/mcp-gateway-registry
+Total files scanned: 899
+
+Languages / file types (top):
+- Python: 329 (e.g., credentials-provider/utils.py, credentials-provider/keycloak/generate_tokens.py, credentials-provider/oauth/generic_oauth_flow.py)
+- Markdown: 134 (e.g., credentials-provider/agentcore-auth/README.md, SECURITY.md, CODE_OF_CONDUCT.md)
+- JSON: 69 (e.g., keycloak/import/realm-config.json, api/openapi.json, terraform/aws-ecs/grafana/dashboards/mcp-analytics-comprehensive.json)
+- Shell Script: 63 (e.g., credentials-provider/check_and_refresh_creds.sh, credentials-provider/generate_creds.sh, keycloak/setup/init-keycloak.sh)
+- YAML: 61 (e.g., credentials-provider/oauth/oauth_providers.yaml, docker-compose.prebuilt.yml, mkdocs.yml)
+- TypeScript (React): 56 (e.g., cli/src/app.tsx, cli/src/components/JsonViewer.tsx, cli/src/components/MultiStepForm.tsx)
+- TypeScript: 43 (e.g., cli/src/auth.ts, cli/src/chat/commandParser.ts, cli/src/chat/taskInterpreter.ts)
+- Other (.tf): 30 (e.g., terraform/aws-ecs/keycloak-database.tf, terraform/aws-ecs/keycloak-ecr.tf, terraform/aws-ecs/keycloak-dns.tf)
+- Image (PNG): 25 (e.g., terraform/aws-ecs/img/architecture-ecs.png, terraform/aws-ecs/img/MCP-Gateway-Registry-first-login.png, frontend/src/assets/logo.png)
+- Other (no extension): 15 (e.g., .gitignore, api/.gitignore, api/.network-trusted-token)
+- HTML: 10 (e.g., frontend/tests/reports/report.html, frontend/public/index.html, docker/502.html)
+- TOML: 9 (e.g., metrics-service/pyproject.toml, auth_server/pyproject.toml, agents/a2a/pyproject.toml)
+- Other (.example): 7 (e.g., credentials-provider/oauth/.env.example, credentials-provider/agentcore-auth/.env.example, metrics-service/.env.example)
+- Dockerfile: 6 (e.g., metrics-service/Dockerfile, terraform/aws-ecs/grafana/Dockerfile, agents/a2a/src/flight-booking-agent/Dockerfile)
+- Lockfile: 4 (e.g., metrics-service/uv.lock, agents/a2a/uv.lock, charts/mcp-gateway-registry-stack/Chart.lock)
+
+Special files (infra/config):
+- Python project config (TOML): 9 (e.g., metrics-service/pyproject.toml, auth_server/pyproject.toml, agents/a2a/pyproject.toml)
+- Dockerfile: 6 (e.g., metrics-service/Dockerfile, terraform/aws-ecs/grafana/Dockerfile, agents/a2a/src/flight-booking-agent/Dockerfile)
+- Docker config: 6 (e.g., .dockerignore, agents/a2a/.dockerignore, servers/realserverfaketools/.dockerignore)
+- Git config: 5 (e.g., .gitignore, api/.gitignore, terraform/aws-ecs/.gitignore)
+- Helm chart (YAML): 5 (e.g., charts/keycloak-configure/Chart.yaml, charts/auth-server/Chart.yaml, charts/mcp-gateway-registry-stack/Chart.yaml)
+- Node project config (JSON): 3 (e.g., cli/package.json, frontend/package.json, package.json)
+- TypeScript config (JSON): 2 (e.g., cli/tsconfig.json, frontend/tsconfig.json)
+- Docker Compose (YAML): 1 (e.g., docker-compose.yml)
+- Python requirements: 1 (e.g., terraform/aws-ecs/scripts/requirements.txt)
+- Makefile: 1 (e.g., Makefile)
+
+Top extensions:
+- .py: 329 -> Python
+- .md: 134 -> Markdown
+- .json: 69 -> JSON
+- .sh: 63 -> Shell Script
+- .tsx: 56 -> TypeScript (React)
+- .ts: 43 -> TypeScript
+- .yaml: 38 -> YAML
+- .tf: 30 -> Other (.tf)
+- .png: 25 -> Image (PNG)
+- .yml: 23 -> YAML
+- .html: 10 -> HTML
+- .toml: 9 -> TOML
+- .example: 7 -> Other (.example)
+- .lock: 4 -> Lockfile
+- .txt: 4 -> Text
+
+================================================================================
