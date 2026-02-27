@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import os
 import re
 import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List
+
+
+DEFAULT_OUT_FILE = "part1_results.txt"
 
 IGNORE_DIRS = {
     ".git", ".venv", "venv", "node_modules", "dist", "build", ".next",
@@ -64,13 +69,15 @@ Q3_QUESTION = (
     "(e.g., Python, TypeScript, YAML, JSON, Dockerfile, etc.)"
 )
 
-def run(cmd: List[str], cwd: str) -> str:
+
+def _run(cmd: List[str], cwd: str) -> str:
     p = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
     if p.returncode != 0:
         raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr}")
     return p.stdout
 
-def build_find_prune_args(ignore_dirs: set) -> List[str]:
+
+def _build_find_prune_args(ignore_dirs: set) -> List[str]:
     args: List[str] = ["("]
     first = True
     for d in sorted(ignore_dirs):
@@ -81,11 +88,12 @@ def build_find_prune_args(ignore_dirs: set) -> List[str]:
     args += [")", "-prune", "-o", "-type", "f", "-print"]
     return args
 
+
 def detect_languages_and_types(repo_path: str, top_k_examples: int = 3) -> Dict[str, object]:
     repo_path = os.path.abspath(repo_path)
 
-    find_args = ["find", "."] + build_find_prune_args(IGNORE_DIRS)
-    out = run(find_args, cwd=repo_path).splitlines()
+    find_args = ["find", "."] + _build_find_prune_args(IGNORE_DIRS)
+    out = _run(find_args, cwd=repo_path).splitlines()
     files = [p[2:] if p.startswith("./") else p for p in out if p.strip()]
 
     ext_counts = Counter()
@@ -142,14 +150,16 @@ def detect_languages_and_types(repo_path: str, top_k_examples: int = 3) -> Dict[
         "special_files": specials,
     }
 
+
 def format_q3_block(result: Dict[str, object], max_each_section: int = 15) -> str:
-    lines = []
+    lines: List[str] = []
     lines.append("Q3: " + Q3_QUESTION)
     lines.append("")
     lines.append(f"Repo scanned: {result['repo_path']}")
     lines.append(f"Total files scanned: {result['total_files_scanned']}")
     lines.append("")
     lines.append("Languages / file types (top):")
+
     for item in result["by_language_or_type"][:max_each_section]:
         ex = ", ".join(item["examples"])
         lines.append(f"- {item['label']}: {item['count']} (e.g., {ex})")
@@ -173,21 +183,53 @@ def format_q3_block(result: Dict[str, object], max_each_section: int = 15) -> st
     lines.append("")
     return "\n".join(lines)
 
-def append_to_results(file_path: str, block: str) -> None:
-    # Ensure directory exists if user passes nested path
+
+def _append_to_results(file_path: str, block: str) -> None:
     os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
     with open(file_path, "a", encoding="utf-8") as f:
-        # If file already has content and doesn't end with newline, add one
         if f.tell() != 0:
             f.write("\n")
         f.write(block)
 
+
+def answer_q3(
+    repo_dir: str,
+    out_file: str | None = DEFAULT_OUT_FILE,
+    top_k_examples: int = 3,
+    max_each_section: int = 15,
+) -> str:
+    """
+    Notebook-friendly entry point for Q3.
+    Scans repo file tree (excluding common build/venv dirs), summarizes languages/types.
+
+    Args:
+        repo_dir: repo root directory
+        out_file: append results to this file; None disables writing
+        top_k_examples: how many example paths to show per label
+        max_each_section: how many labels/extensions to print
+
+    Returns:
+        Formatted Q3 block string.
+    """
+    repo_root = Path(repo_dir)
+    if not repo_root.exists():
+        raise FileNotFoundError(f"Repo not found: {repo_root}")
+
+    res = detect_languages_and_types(repo_path=str(repo_root), top_k_examples=top_k_examples)
+    block = format_q3_block(res, max_each_section=max_each_section)
+
+    if out_file:
+        _append_to_results(out_file, block)
+
+    return block
+
+
+def main() -> None:
+    repo = "mcp-gateway-registry"
+    text = answer_q3(repo_dir=repo, out_file=DEFAULT_OUT_FILE)
+    print(f"Appended Q3 results to: {DEFAULT_OUT_FILE}")
+    print(text[:1200])
+
+
 if __name__ == "__main__":
-    repo = "mcp-gateway-registry"        # repo folder in your assignment root
-    results_txt = "part1_results.txt"     # your existing file with Q1/Q2
-
-    res = detect_languages_and_types(repo_path=repo, top_k_examples=3)
-    block = format_q3_block(res, max_each_section=15)
-    append_to_results(results_txt, block)
-
-    print(f"Appended Q3 results to: {results_txt}")
+    main()

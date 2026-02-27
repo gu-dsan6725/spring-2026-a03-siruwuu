@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import subprocess
@@ -12,8 +14,7 @@ except Exception:
     load_dotenv = None
 
 
-REPO_DIR = "mcp-gateway-registry"
-RESULTS_TXT = "part1_results.txt"
+DEFAULT_OUT_FILE = "part1_results.txt"
 
 Q6_QUESTION = (
     "How would you add support for a new OAuth provider (e.g., Okta) to the authentication system? "
@@ -25,14 +26,16 @@ IGNORE_DIRS = {
     "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
 }
 
+
 # -------------------- utils --------------------
-def ensure_env_loaded():
+def ensure_env_loaded() -> None:
     if load_dotenv is None:
         return
     project_root = Path(__file__).resolve().parents[1]
     env_path = project_root / ".env"
     if env_path.exists():
         load_dotenv(env_path)
+
 
 def run_cmd(cmd: str, cwd: str) -> str:
     p = subprocess.run(cmd, shell=True, cwd=cwd, text=True, capture_output=True)
@@ -44,8 +47,10 @@ def run_cmd(cmd: str, cwd: str) -> str:
         return out
     return p.stdout
 
+
 def has_rg(cwd: str) -> bool:
     return run_cmd("command -v rg >/dev/null 2>&1; echo $?", cwd=cwd).strip() == "0"
+
 
 def rg_search(cwd: str, query: str, globs: Optional[List[str]] = None, max_lines: int = 500) -> str:
     globs = globs or []
@@ -56,8 +61,9 @@ def rg_search(cwd: str, query: str, globs: Optional[List[str]] = None, max_lines
     cmd = f"grep -RIn \"{query}\" . | head -n {max_lines}"
     return run_cmd(cmd, cwd=cwd)
 
+
 def parse_hits(output: str, limit: int = 40) -> List[Tuple[str, int, str]]:
-    hits = []
+    hits: List[Tuple[str, int, str]] = []
     for line in output.splitlines():
         m = re.match(r"^(.+?):(\d+):(.*)$", line)
         if not m:
@@ -67,16 +73,19 @@ def parse_hits(output: str, limit: int = 40) -> List[Tuple[str, int, str]]:
             break
     return hits
 
+
 def snippet_with_lineno(cwd: str, rel_path: str, center_line: int, radius: int = 60) -> str:
     start = max(1, center_line - radius)
     end = center_line + radius
     cmd = f"nl -ba \"{rel_path}\" | sed -n '{start},{end}p'"
     return run_cmd(cmd, cwd=cwd)
 
+
 def safe_truncate(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[:max_chars] + "\n\n[TRUNCATED]\n"
+
 
 # -------------------- retrieval for Q6 --------------------
 def retrieve_q6_context(repo_dir: str, max_files_snippets: int = 18) -> str:
@@ -85,22 +94,23 @@ def retrieve_q6_context(repo_dir: str, max_files_snippets: int = 18) -> str:
 
     sections: List[str] = []
 
-    # Locate auth provider implementations / registry
     sections.append(
         "## Find likely OAuth/provider/auth integration files\n"
         + run_cmd(
             "find . \\( -path './.git' -o -path './node_modules' -o -path './.venv' -o -path './venv' \\) -prune -o "
             "-type f \\( -iname '*oauth*' -o -iname '*provider*' -o -iname '*auth*' -o -iname '*oidc*' -o -iname '*sso*' "
-            "-o -iname '*jwt*' -o -iname '*openid*' -o -iname '*callback*' -o -iname '*login*' \\) -print | head -n 260",
+            "-iname '*jwt*' -o -iname '*openid*' -o -iname '*callback*' -o -iname '*login*' \\) -print | head -n 260",
             cwd=cwd,
         ).strip()
         + "\n"
     )
 
-    # Search for patterns indicating a provider interface / enum / factory / registry
     patterns = [
         ("OAuth/OIDC keywords", r"(oauth|oidc|openid|authorization_url|token_url|issuer|jwks|client_id|client_secret)"),
-        ("Provider registry/factory", r"(Provider|provider|AUTH_PROVIDER|OAUTH_PROVIDER|SUPPORTED_PROVIDERS|factory|registry|get_provider|create_provider)"),
+        (
+            "Provider registry/factory",
+            r"(Provider|provider|AUTH_PROVIDER|OAUTH_PROVIDER|SUPPORTED_PROVIDERS|factory|registry|get_provider|create_provider)",
+        ),
         ("FastAPI security wiring", r"(fastapi\.security|OAuth2|OAuth2AuthorizationCodeBearer|OAuth2PasswordBearer|HTTPBearer|Security\(|Depends\()"),
         ("Routes for login/callback", r"(@router\.(get|post)\b.*(login|callback|oauth|authorize)|/callback|/authorize|/login)"),
         ("Config/env settings", r"(ENV|os\.environ|pydantic.*BaseSettings|Settings|config|\.env|CLIENT_ID|CLIENT_SECRET|ISSUER|JWKS|DISCOVERY)"),
@@ -108,7 +118,7 @@ def retrieve_q6_context(repo_dir: str, max_files_snippets: int = 18) -> str:
     ]
 
     expanded_snips: List[str] = []
-    seen_files = set()
+    seen_files: set[str] = set()
 
     for title, pat in patterns:
         out = rg_search(cwd=cwd, query=pat, globs=globs, max_lines=700)
@@ -130,6 +140,7 @@ def retrieve_q6_context(repo_dir: str, max_files_snippets: int = 18) -> str:
     sections.append("## Expanded snippets (line-numbered)\n" + "\n".join(expanded_snips))
     context = "\n".join(sections)
     return safe_truncate(context, max_chars=26000)
+
 
 # -------------------- Groq call --------------------
 def llm_call_groq(question: str, context: str) -> str:
@@ -171,6 +182,7 @@ Deliverables:
     )
     return resp.choices[0].message.content.strip()
 
+
 # -------------------- write results --------------------
 def append_block(path: str, block: str) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -179,27 +191,56 @@ def append_block(path: str, block: str) -> None:
             f.write("\n")
         f.write(block)
 
+
 def format_q6_block(answer: str) -> str:
     return (
         f"Q6: {Q6_QUESTION}\n\n"
         f"{answer}\n\n"
-        f"Context note:\nContext was retrieved via find/rg and expanded with nl+sed line-numbered snippets.\n\n"
+        "Context note:\nContext was retrieved via find/rg and expanded with nl+sed line-numbered snippets.\n\n"
         + "=" * 80
         + "\n"
     )
 
-# -------------------- main --------------------
-if __name__ == "__main__":
+
+def answer_q6(
+    repo_dir: str,
+    out_file: str | None = DEFAULT_OUT_FILE,
+    max_files_snippets: int = 20,
+) -> str:
+    """
+    Notebook-friendly entry point for Q6.
+
+    Args:
+        repo_dir: repo root directory
+        out_file: append results to this file; None disables writing
+        max_files_snippets: number of file snippets expanded into context
+
+    Returns:
+        Formatted Q6 block string (ready to print).
+    """
     ensure_env_loaded()
 
-    repo_abs = os.path.abspath(REPO_DIR)
+    repo_abs = os.path.abspath(repo_dir)
     if not os.path.isdir(repo_abs):
         raise RuntimeError(f"Repo folder not found: {repo_abs}. Did you git clone it into your assignment directory?")
 
-    context = retrieve_q6_context(REPO_DIR, max_files_snippets=20)
+    context = retrieve_q6_context(repo_dir, max_files_snippets=max_files_snippets)
     answer = llm_call_groq(Q6_QUESTION, context)
 
     block = format_q6_block(answer)
-    append_block(RESULTS_TXT, block)
 
-    print(f"Saved Q6 answer to {RESULTS_TXT}")
+    if out_file:
+        append_block(out_file, block)
+
+    return block
+
+
+def main() -> None:
+    repo = "mcp-gateway-registry"
+    block = answer_q6(repo_dir=repo, out_file=DEFAULT_OUT_FILE, max_files_snippets=20)
+    print(f"Saved Q6 answer to {DEFAULT_OUT_FILE}")
+    print(block[:1200])
+
+
+if __name__ == "__main__":
+    main()

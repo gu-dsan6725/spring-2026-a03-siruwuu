@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import re
 
-REPO_ROOT = Path("mcp-gateway-registry")
-OUT_FILE = Path("part1_results.txt")
+
+DEFAULT_OUT_FILE = "part1_results.txt"
 
 # Q2: "What is the main entry point file for the registry service?"
 # Heuristic:
@@ -59,25 +59,26 @@ def extract_snippet(path: Path, center_line: int, radius: int = 20) -> str:
     lines = path.read_text(errors="replace").splitlines()
     start = max(1, center_line - radius)
     end = min(len(lines), center_line + radius)
-    out = []
+
+    out: List[str] = []
     for ln in range(start, end + 1):
         out.append(f"{ln:>4} | {lines[ln - 1]}")
     return "\n".join(out)
 
 
-def find_best_entrypoint() -> Tuple[Optional[FileScore], List[FileScore]]:
+def find_best_entrypoint(repo_root: Path) -> Tuple[Optional[FileScore], List[FileScore]]:
     candidates: List[Path] = []
 
     for d in CANDIDATE_DIRS:
-        candidates.extend(gather_py_files(REPO_ROOT / d))
+        candidates.extend(gather_py_files(repo_root / d))
 
     # fallback: if nothing found in registry/api, scan entire repo
     if not candidates:
-        candidates = [p for p in REPO_ROOT.rglob("*.py") if p.is_file()]
+        candidates = [p for p in repo_root.rglob("*.py") if p.is_file()]
 
     scored: List[FileScore] = []
     for p in candidates:
-        rel = str(p.relative_to(REPO_ROOT))
+        rel = str(p.relative_to(repo_root))
         try:
             text = p.read_text(errors="replace")
         except Exception:
@@ -85,7 +86,9 @@ def find_best_entrypoint() -> Tuple[Optional[FileScore], List[FileScore]]:
 
         score, hits, first_line = count_hits_and_first_line(text)
         if score > 0:
-            scored.append(FileScore(rel_path=rel, score=score, hits=hits, first_hit_line=first_line))
+            scored.append(
+                FileScore(rel_path=rel, score=score, hits=hits, first_hit_line=first_line)
+            )
 
     scored.sort(key=lambda x: (x.score, -len(x.hits)), reverse=True)
     best = scored[0] if scored else None
@@ -117,13 +120,22 @@ def format_q2(best: FileScore, snippet: str) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
-    if not REPO_ROOT.exists():
-        raise FileNotFoundError(
-            f"Repo not found: {REPO_ROOT}. Run this from the advanced-rag project root."
-        )
+def answer_q2(repo_dir: str, out_file: str | None = DEFAULT_OUT_FILE) -> str:
+    """
+    Notebook-friendly entry point for Q2.
 
-    best, scored = find_best_entrypoint()
+    Args:
+        repo_dir: path to the cloned repository root (e.g. "mcp-gateway-registry")
+        out_file: where to append results; set None to disable writing
+
+    Returns:
+        The formatted Q2 answer text.
+    """
+    repo_root = Path(repo_dir)
+    if not repo_root.exists():
+        raise FileNotFoundError(f"Repo not found: {repo_root}")
+
+    best, scored = find_best_entrypoint(repo_root)
 
     if best is None:
         text = (
@@ -132,27 +144,34 @@ def main() -> None:
             "Could not automatically locate a FastAPI entry point under registry/ or api/. "
             "Try searching manually for 'FastAPI(' under the repo.\n\n"
         )
-        with open(OUT_FILE, "a", encoding="utf-8") as f:
-            f.write(text)
-        print("Q2 written, but entry point not found automatically.")
-        return
+        if out_file:
+            with open(out_file, "a", encoding="utf-8") as f:
+                f.write(text)
+        return text
 
-    # Make a snippet around first hit line, or default to top of file
     center = best.first_hit_line or 1
-    snippet = extract_snippet(REPO_ROOT / best.rel_path, center_line=center, radius=20)
+    snippet = extract_snippet(repo_root / best.rel_path, center_line=center, radius=20)
+    text = format_q2(best, snippet)
 
-    q2_text = format_q2(best, snippet)
+    # Append top candidates for transparency/debugging
+    if scored:
+        text += "Top candidates (debug):\n"
+        for s in scored[:5]:
+            text += f"- {s.rel_path} (score={s.score})\n"
+        text += "\n"
 
-    # Append to existing part1_results.txt
-    with open(OUT_FILE, "a", encoding="utf-8") as f:
-        f.write(q2_text)
+    if out_file:
+        with open(out_file, "a", encoding="utf-8") as f:
+            f.write(text)
 
-    print(f"Appended Q2 result to: {OUT_FILE}")
-    print(f"Top candidate: {best.rel_path} (score={best.score})")
+    return text
 
-    # Optional: show top 5 candidates for debugging
-    # for s in scored[:5]:
-    #     print(s.rel_path, s.score, s.first_hit_line)
+
+def main() -> None:
+    repo_dir = "mcp-gateway-registry"
+    text = answer_q2(repo_dir=repo_dir, out_file=DEFAULT_OUT_FILE)
+    print(f"Appended Q2 result to: {DEFAULT_OUT_FILE}")
+    print(text[:1200])
 
 
 if __name__ == "__main__":

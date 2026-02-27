@@ -3,17 +3,22 @@
 def classify_query(q: str) -> str:
     q = q.lower()
 
-    if "depend" in q:
-        return "dependencies"
-    if "entry" in q or "main" in q:
-        return "entrypoint"
-    if "language" in q or "file type" in q:
-        return "repo_structure"
-    if "auth" in q:
-        return "auth_flow"
-    if "endpoint" in q:
-        return "api_endpoints"
-    if "oauth" in q or "provider" in q:
-        return "oauth_extension"
+    if "dependenc" in q or "requirements" in q or "pyproject" in q:
+        return "q1"
 
-    return "general"
+    if "entry point" in q or ("main" in q and "file" in q):
+        return "q2"
+
+    if "programming language" in q or "file type" in q or "file types" in q:
+        return "q3"
+
+    if "authentication flow" in q or ("authentication" in q and "authorization" in q) or "token validation" in q:
+        return "q4"
+
+    if "api endpoints" in q or "endpoints" in q or "scopes" in q:
+        return "q5"
+
+    if "oauth provider" in q or "okta" in q or ("oauth" in q and "provider" in q):
+        return "q6"
+
+    return "unknown"

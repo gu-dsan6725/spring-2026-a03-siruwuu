@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 import re
 import subprocess
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional
 from pathlib import Path
 
 from groq import Groq
@@ -12,9 +14,7 @@ except Exception:
     load_dotenv = None
 
 
-REPO_DIR = "mcp-gateway-registry"
-RESULTS_TXT = "part1_results.txt"
-
+DEFAULT_OUT_FILE = "part1_results.txt"
 Q5_QUESTION = "What are all the API endpoints available in the registry service and what scopes do they require?"
 
 IGNORE_DIRS = {
@@ -22,8 +22,9 @@ IGNORE_DIRS = {
     "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
 }
 
+
 # -------------------- utils --------------------
-def ensure_env_loaded():
+def ensure_env_loaded() -> None:
     if load_dotenv is None:
         return
     project_root = Path(__file__).resolve().parents[1]
@@ -31,10 +32,10 @@ def ensure_env_loaded():
     if env_path.exists():
         load_dotenv(env_path)
 
+
 def run_cmd(cmd: str, cwd: str) -> str:
     p = subprocess.run(cmd, shell=True, cwd=cwd, text=True, capture_output=True)
     if p.returncode != 0:
-        # grep/rg can return non-zero on no matches, keep output anyway
         out = (p.stdout or "")
         err = (p.stderr or "")
         if err.strip():
@@ -42,8 +43,10 @@ def run_cmd(cmd: str, cwd: str) -> str:
         return out
     return p.stdout
 
+
 def has_rg(cwd: str) -> bool:
     return run_cmd("command -v rg >/dev/null 2>&1; echo $?", cwd=cwd).strip() == "0"
+
 
 def rg_search(cwd: str, query: str, globs: Optional[List[str]] = None, max_lines: int = 400) -> str:
     globs = globs or []
@@ -54,8 +57,9 @@ def rg_search(cwd: str, query: str, globs: Optional[List[str]] = None, max_lines
     cmd = f"grep -RIn \"{query}\" . | head -n {max_lines}"
     return run_cmd(cmd, cwd=cwd)
 
+
 def parse_hits(output: str, limit: int = 30) -> List[Tuple[str, int, str]]:
-    hits = []
+    hits: List[Tuple[str, int, str]] = []
     for line in output.splitlines():
         m = re.match(r"^(.+?):(\d+):(.*)$", line)
         if not m:
@@ -65,16 +69,19 @@ def parse_hits(output: str, limit: int = 30) -> List[Tuple[str, int, str]]:
             break
     return hits
 
+
 def snippet_with_lineno(cwd: str, rel_path: str, center_line: int, radius: int = 50) -> str:
     start = max(1, center_line - radius)
     end = center_line + radius
     cmd = f"nl -ba \"{rel_path}\" | sed -n '{start},{end}p'"
     return run_cmd(cmd, cwd=cwd)
 
+
 def safe_truncate(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[:max_chars] + "\n\n[TRUNCATED]\n"
+
 
 # -------------------- retrieval for Q5 --------------------
 def retrieve_q5_context(repo_dir: str, max_files_snippets: int = 14) -> str:
@@ -84,7 +91,6 @@ def retrieve_q5_context(repo_dir: str, max_files_snippets: int = 14) -> str:
     sections: List[str] = []
     sections.append("## Quick repo listing\n" + run_cmd("ls -la", cwd=cwd).strip() + "\n")
 
-    # Find likely FastAPI service files
     sections.append(
         "## Find likely FastAPI/API files\n"
         + run_cmd(
@@ -96,16 +102,21 @@ def retrieve_q5_context(repo_dir: str, max_files_snippets: int = 14) -> str:
         + "\n"
     )
 
-    # Pull route decorators and router wiring
     patterns = [
-        ("Route decorators", r"(@router\.(get|post|put|patch|delete|options|head)\b|@app\.(get|post|put|patch|delete|options|head)\b)"),
+        (
+            "Route decorators",
+            r"(@router\.(get|post|put|patch|delete|options|head)\b|@app\.(get|post|put|patch|delete|options|head)\b)",
+        ),
         ("APIRouter definitions", r"(APIRouter\()"),
         ("include_router wiring", r"(include_router\()"),
-        ("Security and scopes keywords", r"(Security\(|OAuth2|HTTPBearer|scopes|scope|Depends\(|require_scopes|permission|role)"),
+        (
+            "Security and scopes keywords",
+            r"(Security\(|OAuth2|HTTPBearer|scopes|scope|Depends\(|require_scopes|permission|role)",
+        ),
     ]
 
     expanded_snips: List[str] = []
-    seen_files = set()
+    seen_files: set[str] = set()
 
     for title, pat in patterns:
         out = rg_search(cwd=cwd, query=pat, globs=globs, max_lines=600)
@@ -124,8 +135,12 @@ def retrieve_q5_context(repo_dir: str, max_files_snippets: int = 14) -> str:
         if len(expanded_snips) >= max_files_snippets:
             break
 
-    # Try to grab OpenAPI title if present
-    openapi_out = rg_search(cwd=cwd, query=r"(openapi|OpenAPI|swagger|docs_url|redoc_url)", globs=globs, max_lines=200)
+    openapi_out = rg_search(
+        cwd=cwd,
+        query=r"(openapi|OpenAPI|swagger|docs_url|redoc_url)",
+        globs=globs,
+        max_lines=200,
+    )
     if openapi_out.strip():
         sections.append("## rg search: OpenAPI/docs config\n" + openapi_out.strip() + "\n")
 
@@ -133,6 +148,7 @@ def retrieve_q5_context(repo_dir: str, max_files_snippets: int = 14) -> str:
 
     context = "\n".join(sections)
     return safe_truncate(context, max_chars=24000)
+
 
 # -------------------- Groq call --------------------
 def llm_call_groq(question: str, context: str) -> str:
@@ -172,6 +188,7 @@ Output format requirements:
     )
     return resp.choices[0].message.content.strip()
 
+
 # -------------------- write results --------------------
 def append_block(path: str, block: str) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -180,27 +197,55 @@ def append_block(path: str, block: str) -> None:
             f.write("\n")
         f.write(block)
 
+
 def format_q5_block(answer: str) -> str:
     return (
         f"Q5: {Q5_QUESTION}\n\n"
         f"{answer}\n\n"
-        f"Context note:\nContext was retrieved via find/rg and expanded with nl+sed line-numbered snippets.\n\n"
+        "Context note:\nContext was retrieved via find/rg and expanded with nl+sed line-numbered snippets.\n\n"
         + "=" * 80
         + "\n"
     )
 
-# -------------------- main --------------------
-if __name__ == "__main__":
+
+def answer_q5(
+    repo_dir: str,
+    out_file: str | None = DEFAULT_OUT_FILE,
+    max_files_snippets: int = 16,
+) -> str:
+    """
+    Notebook-friendly entry point for Q5.
+
+    Args:
+        repo_dir: repo root directory
+        out_file: append results to this file; None disables writing
+        max_files_snippets: number of file snippets expanded into context
+
+    Returns:
+        Formatted Q5 block string (ready to print).
+    """
     ensure_env_loaded()
 
-    repo_abs = os.path.abspath(REPO_DIR)
+    repo_abs = os.path.abspath(repo_dir)
     if not os.path.isdir(repo_abs):
         raise RuntimeError(f"Repo folder not found: {repo_abs}. Did you git clone it into your assignment directory?")
 
-    context = retrieve_q5_context(REPO_DIR, max_files_snippets=16)
+    context = retrieve_q5_context(repo_dir, max_files_snippets=max_files_snippets)
     answer = llm_call_groq(Q5_QUESTION, context)
-
     block = format_q5_block(answer)
-    append_block(RESULTS_TXT, block)
 
-    print(f"Saved Q5 answer to {RESULTS_TXT}")
+    if out_file:
+        append_block(out_file, block)
+
+    return block
+
+
+def main() -> None:
+    repo = "mcp-gateway-registry"
+    block = answer_q5(repo_dir=repo, out_file=DEFAULT_OUT_FILE, max_files_snippets=16)
+    print(f"Saved Q5 answer to {DEFAULT_OUT_FILE}")
+    print(block[:1200])
+
+
+if __name__ == "__main__":
+    main()
