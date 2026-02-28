@@ -1,0 +1,155 @@
+Part 2 Results
+
+Q1
+Query: "What was the total revenue for Electronics category in December 2024?"
+Router decision: csv
+
+Retrieved context:
+CSV: Electronics total_revenue in Dec 2024 = 142864.31
+
+Files referenced:
+- ../data/structured/daily_sales.csv
+
+Q2
+Query: "Which region had the highest sales volume?"
+Router decision: csv
+
+Retrieved context:
+CSV: top region by units_sold = Central (6779)
+
+Files referenced:
+- ../data/structured/daily_sales.csv
+
+Q3
+Query: "What are the key features of the Wireless Bluetooth Headphones?"
+Router decision: text
+
+Retrieved context:
+TEXT from ELEC001_product_page.txt:
+========================================
+WIRELESS BLUETOOTH HEADPHONES - PRODUCT PAGE
+========================================
+
+Product: Wireless Bluetooth Headphones
+Brand: SoundMax Pro
+Price: $79.99
+SKU: ELEC001
+Category: Electronics
+
+PRODUCT DESCRIPTION:
+Experience crystal-clear audio with our premium Wireless Bluetooth Headphones.
+Featuring advanced noise-cancellation technology and 40-hour battery life, these
+headphones are perfect for commuting, working from home, or enjoying your favorite
+music without interruption.
+
+Key Features:
+- Active Noise Cancellation (ANC) with transparency mode
+- Bluetooth 5.2 for stable connectivity up to 30ft range
+- 40-hour battery life, quick charge (10 min = 3 hours playback)
+- Premium memory foam ear cushions for all-day comfort
+- Foldable design with carrying case included
+- Built-in microphone for calls and voice assistant
+
+Te
+
+Files referenced:
+- ../data/unstructured/ELEC001_product_page.txt
+
+Q4
+Query: "What do customers say about the Air Fryer's ease of cleaning?"
+Router decision: text
+
+Retrieved context:
+TEXT from HOME003_product_page.txt:
+without the guilt. Made salmon last night and it was restaurant quality.
+The 5.5L size is perfect for our family of 4."
+
+Review 3 - Lisa G. (Verified Purchase) - 4 stars
+"Great product overall. Takes a bit of learning to get temperatures right for
+different foods. Wish the cord was longer - had to rearrange my counter. But the
+food quality is excellent and cleanup is a breeze."
+
+Review 4 - James C. (Verified Purchase) - 5 stars
+"I was skeptical about air fryers but this one converted me. Made wings for game
+day and they were incredible. The basket size is generous - I can fit 2 lbs of wings
+easily. Highly recommend!"
+
+Review 5 - Maria S. (Verified Purchase) - 4 stars
+"Good air fryer, heats up quickly and cooks evenly. The only downside is it's a
+bit loud during operation. But the results are worth it - everything is so crispy!"
+
+Average Rating: 4.6/5 (5,234 reviews)
+--------------------
+
+Files referenced:
+- ../data/unstructured/HOME003_product_page.txt
+
+Q5
+Query: "Which product has the best customer reviews and how well is it selling?"
+Router decision: both
+
+Retrieved context:
+CSV: available columns = date, product_id, product_name, category, units_sold, unit_price, total_revenue, region
+CSV: sample rows:
+      date product_id                 product_name       category  units_sold  unit_price  total_revenue  region
+2024-10-03    BOOK003     Mystery Novel Collection          Books          42       24.99        1049.58 Central
+2024-10-03    ELEC002           USB-C Fast Charger    Electronics          57       24.99        1424.43 Central
+2024-10-03    BOOK001     Python Programming Guide          Books          39       39.65        1546.35    West
+2024-10-03    ELEC003 Portable Power Bank 20000mAh    Electronics          22       49.99        1099.78   North
+2024-10-03    FOOD001     Organic Coffee Beans 1kg Food & Grocery          11       24.99         274.89   North
+
+TEXT from BEAU001_product_page.txt:
+========================================
+VITAMIN C SERUM - PRODUCT PAGE
+========================================
+
+Product: Vitamin C Serum
+Brand: GlowLab Skincare
+Price: $28.99
+SKU: BEAU001
+Category: Beauty & Personal Care
+
+PRODUCT DESCRIPTION:
+Reveal brighter, more youthful skin with GlowLab's Vitamin C Serum. This powerful
+antioxidant formula combines 20% Vitamin C (L-Ascorbic Acid) with Vitamin E and
+Hyaluronic Acid to reduce dark spots, fine lines, and sun damage while hydrating
+and protecting your s
+
+Files referenced:
+- ../data/structured/daily_sales.csv
+- ../data/unstructured/BEAU001_product_page.txt
+
+Q6
+Query: "I want a product for fitness that is highly rated and sells well in the West region. What do you recommend?"
+Router decision: both
+
+Retrieved context:
+CSV: available columns = date, product_id, product_name, category, units_sold, unit_price, total_revenue, region
+CSV: sample rows:
+      date product_id                 product_name       category  units_sold  unit_price  total_revenue  region
+2024-10-03    BOOK003     Mystery Novel Collection          Books          42       24.99        1049.58 Central
+2024-10-03    ELEC002           USB-C Fast Charger    Electronics          57       24.99        1424.43 Central
+2024-10-03    BOOK001     Python Programming Guide          Books          39       39.65        1546.35    West
+2024-10-03    ELEC003 Portable Power Bank 20000mAh    Electronics          22       49.99        1099.78   North
+2024-10-03    FOOD001     Organic Coffee Beans 1kg Food & Grocery          11       24.99         274.89   North
+
+TEXT from CLTH001_product_page.txt:
+========================================
+RUNNING SHOES MEN - PRODUCT PAGE
+========================================
+
+Product: Running Shoes Men
+Brand: StrideMax Athletics
+Price: $89.99
+SKU: CLTH001
+Category: Clothing
+
+PRODUCT DESCRIPTION:
+Engineered for performance and comfort, the StrideMax Running Shoes are designed
+for runners of all levels. Featuring responsive cushioning and a breathable mesh
+upper, these shoes provide the perfect blend of support and flexibility for your
+daily runs or marathon trainin
+
+Files referenced:
+- ../data/structured/daily_sales.csv
+- ../data/unstructured/CLTH001_product_page.txt
