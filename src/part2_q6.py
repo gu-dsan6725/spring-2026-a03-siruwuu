@@ -100,7 +100,9 @@ def answer_q6(data_dir: str = "data", out_file: str | None = DEFAULT_OUT_FILE) -
 def main() -> None:
     text = answer_q6(data_dir="data", out_file=DEFAULT_OUT_FILE)
     print(f"Wrote Q6 results to: {DEFAULT_OUT_FILE}")
-    print(text[:1200))
+    if not isinstance(text, str):
+        raise TypeError(f"answer_q6 returned {type(text)} (expected str)")
+    print(text[:1200])
 
 
 if __name__ == "__main__":
